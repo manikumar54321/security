@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Grant Permission - Smart AI</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    #alerts {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+      margin-top: 30px;
+    }
+    .card {
+      background: #fff;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .card img {
+      width: 100%;
+      height: 200px;
+      object-fit: contain;
+      border-radius: 8px;
+      background: #eee;
+    }
+    .info {
+      margin-top: 10px;
+    }
+    .info p {
+      margin: 5px 0;
+      color: #333;
+    }
+    .grant-btn {
+      background: green;
+      color: white;
+      padding: 8px 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .grant-btn:disabled {
+      background: gray;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🚨 Stranger Alerts - Grant Permission</h1>
+  <div id="alerts">Loading...</div>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDxjPiCVQ72wsfgJt96ApjQauR3vOS3paU",
+      authDomain: "smart-ai-2.firebaseapp.com",
+      databaseURL: "https://smart-ai-2-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "smart-ai-2",
+      storageBucket: "smart-ai-2.appspot.com",
+      messagingSenderId: "344327198635",
+      appId: "1:344327198635:web:d17cfbdc56452d638a64ee"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const alertsContainer = document.getElementById('alerts');
+
+    function renderAlerts(data) {
+      alertsContainer.innerHTML = "";
+      const entries = Object.entries(data).reverse();
+
+      entries.forEach(([id, alert]) => {
+        const card = document.createElement("div");
+        card.className = "card";
+
+        card.innerHTML = `
+          <img src="data:image/png;base64,${alert.image_base64}" alt="alert image" />
+          <div class="info">
+            <p><strong>Person:</strong> ${alert.person || 'Unknown'}</p>
+            <p><strong>File:</strong> ${alert.filename}</p>
+          </div>
+          <button class="grant-btn" ${alert.permission ? "disabled" : ""} onclick="grantPermission('${id}', this)">
+            ${alert.permission ? "✅ Permission Granted" : "Grant Access"}
+          </button>
+        `;
+
+        alertsContainer.appendChild(card);
+      });
+    }
+
+    function loadAlerts() {
+      db.ref("alerts").once("value")
+        .then(snapshot => {
+          const data = snapshot.val();
+          if (data) renderAlerts(data);
+          else alertsContainer.innerHTML = "<p>No alerts found.</p>";
+        })
+        .catch(err => {
+          console.error("Error fetching alerts:", err);
+          alertsContainer.innerHTML = "<p>Failed to load alerts.</p>";
+        });
+    }
+
+    function grantPermission(alertId, btn) {
+      db.ref(`alerts/${alertId}`).update({ permission: true })
+        .then(() => {
+          btn.textContent = "✅ Permission Granted";
+          btn.disabled = true;
+        })
+        .catch(err => {
+          alert("❌ Failed to grant permission.");
+          console.error(err);
+        });
+    }
+
+    // Load alerts on page load
+    loadAlerts();
+  </script>
+
+</body>
+</html>
